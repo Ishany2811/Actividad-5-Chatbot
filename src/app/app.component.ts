@@ -61,7 +61,7 @@ export class AppComponent {
     // 3. Mensaje de bienvenida del sistema
     if (this.messages.length === 0) {
       this.messages.push({
-        text: 'Sistemas SiaGuard en línea. Protocolos de seguridad activos. ¿En qué puedo ayudarte, Luis?',
+        text: 'Sistemas SiaGuard en línea. Protocolos de seguridad activos. ¿En qué puedo ayudarte el dia de hoy, Yulieth?',
         sender: 'bot',
         timestamp: new Date()
       });
