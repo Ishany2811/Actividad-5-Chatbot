@@ -22,8 +22,8 @@ export class AppComponent {
   userInput: string = '';
 
   // Configuración de API (Persistente)
-  apiUrl: string = 'https://tu-url-de-colab.loca.lt/ask';
-
+  apiUrl: string = 'https://Yulieth2811-ElectivaIV.hf.space/query';
+ 
   constructor(private chatService: ChatService) { }
 
   // Variables en tu componente
@@ -61,7 +61,7 @@ export class AppComponent {
     // 3. Mensaje de bienvenida del sistema
     if (this.messages.length === 0) {
       this.messages.push({
-        text: 'Sistemas SiaGuard en línea. Protocolos de seguridad activos. ¿En qué puedo ayudarte el dia de hoy, Yulieth?',
+        text: 'Sistemas SiaGuard en línea. Protocolos de seguridad activos. ¿En qué puedo ayudarte, Luis?',
         sender: 'bot',
         timestamp: new Date()
       });
@@ -74,6 +74,7 @@ export class AppComponent {
   }
 
   // Enviar mensaje a la IA en Colab
+  // Enviar mensaje a la IA
   async sendMessage() {
     if (!this.userInput.trim() || this.loading) return;
 
@@ -81,22 +82,16 @@ export class AppComponent {
     this.userInput = '';
     this.loading = true;
 
-    // Agregar mensaje del usuario localmente
-    this.messages.push({
-      text: userText,
-      sender: 'user',
-      timestamp: new Date()
-    });
+    // --- ELIMINAMOS EL this.messages.push DE AQUÍ ---
+    // Ya no lo agregamos manualmente porque el servicio lo hará 
+    // y nosotros lo recibiremos automáticamente por la suscripción del ngOnInit.
 
     try {
-      // Llamada al servicio (asegúrate que tu servicio use this.apiUrl)
+      // Llamada al servicio
       await this.chatService.sendMessage(userText);
     } catch (error) {
-      this.messages.push({
-        text: 'Error de conexión con el núcleo SiaGuard. Verifica la URL de Colab.',
-        sender: 'bot',
-        timestamp: new Date()
-      });
+      // El error también podrías manejarlo solo en el servicio si prefieres
+      console.error("Error en el componente:", error);
     } finally {
       this.loading = false;
       this.scrollToBottom();
