@@ -7,53 +7,59 @@ import { IMessage } from '../Interfaces/imessage';
   providedIn: 'root'
 })
 export class ChatService {
-  // BehaviorSubject permite que los nuevos suscriptores obtengan el historial actual de inmediato
-  private conversation = new BehaviorSubject<IMessage[]>([]);
+  private messageArray: IMessage[] = [
+    {
+      text: 'Sistemas SiaGuard en línea. Protocolos de seguridad activos. ¿En qué puedo ayudarte, Yulieth?',
+      sender: 'bot',
+      timestamp: new Date()
+    }
+  ];
+  
+  private conversation = new BehaviorSubject<IMessage[]>(this.messageArray);
 
   constructor(private http: HttpClient) {}
 
-  // Retorna el observable para que el componente lo escuche
   getConversation(): Observable<IMessage[]> {
     return this.conversation.asObservable();
   }
 
-  /**
-   * Envía el mensaje a la API de Hugging Face
-   * @param userText Texto enviado por el usuario
-   */
-  async sendMessage(userText: string) {
-    // Solo esta línea debe encargarse de mostrar el mensaje del usuario
-    this.addMessageToConversation(userText, 'user');
-  
-    const apiUrl = localStorage.getItem('siaguard_api_url');
-    if (!apiUrl) return;
-  
-    try {
-      const res = await this.http.post<{ response: string }>(
-        apiUrl, 
-        { query: userText }
-      ).toPromise();
-  
-      if (res && res.response) {
-        this.addMessageToConversation(res.response, 'bot');
-      }
-    } catch (error) {
-      this.addMessageToConversation('Error de conexión', 'bot');
-    }
-  }
+  sendMessage(text: string) {
+    // 1. Obtener la URL del localStorage o usar la de HF por defecto
+    const HF_API_URL = localStorage.getItem('siaguard_api_url') || 'https://yulieth2811-electivaIV.hf.space/query';
 
-  /**
-   * Método auxiliar para actualizar el historial de mensajes de forma inmutable
-   */
-  private addMessageToConversation(text: string, sender: 'user' | 'bot') {
-    const newMessage: IMessage = {
-      text,
-      sender,
-      timestamp: new Date()
-    };
-    
-    // Tomamos el valor actual y emitimos uno nuevo con el mensaje agregado
-    const currentMessages = this.conversation.value;
-    this.conversation.next([...currentMessages, newMessage]);
+    // 2. Agregar mensaje del usuario a la UI inmediatamente
+    const userMsg: IMessage = { text, sender: 'user', timestamp: new Date() };
+    this.messageArray.push(userMsg);
+    this.conversation.next([...this.messageArray]);
+
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    // 3. Petición a Hugging Face
+    this.http.post<{ intent: string, response: string }>(
+      HF_API_URL, 
+      { query: text }, 
+      { headers }
+    )
+    .subscribe({
+      next: (res) => {
+        const botMsg: IMessage = {
+          text: res.response || 'Respuesta recibida sin contenido.',
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        this.messageArray.push(botMsg);
+        this.conversation.next([...this.messageArray]);
+      },
+      error: (err) => {
+        console.error('Error en SIA-AGRO API:', err);
+        const errorMsg: IMessage = {
+          text: 'Error de enlace: El núcleo SiaGuard reporta una interrupción en el servidor.',
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        this.messageArray.push(errorMsg);
+        this.conversation.next([...this.messageArray]);
+      }
+    });
   }
 }
